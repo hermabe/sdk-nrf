@@ -125,10 +125,9 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_BT_PERIPHERAL) ||
 	SDC_DEFAULT_RX_PACKET_COUNT) \
 	+ SDC_MEM_SLAVE_LINKS_SHARED)
 
-#define MEMPOOL_SIZE ((CONFIG_SDC_SLAVE_COUNT * SLAVE_MEM_SIZE) + \
-		      (SDC_MASTER_COUNT * MASTER_MEM_SIZE) + \
-		      (SDC_ADV_SET_COUNT * SDC_MEM_DEFAULT_ADV_SIZE) + \
-		       SDC_SCAN_BUF_SIZE)
+#define MEMPOOL_SIZE                                                                               \
+	((CONFIG_SDC_SLAVE_COUNT * SLAVE_MEM_SIZE) + (SDC_MASTER_COUNT * MASTER_MEM_SIZE) +        \
+	 (SDC_ADV_SET_COUNT * SDC_MEM_DEFAULT_ADV_SIZE) + SDC_SCAN_BUF_SIZE + 2524)
 
 static uint8_t sdc_mempool[MEMPOOL_SIZE];
 
@@ -260,7 +259,6 @@ static bool event_packet_is_discardable(const uint8_t *hci_buf)
 
 		switch (me->subevent) {
 		case BT_HCI_EVT_LE_ADVERTISING_REPORT:
-		case BT_HCI_EVT_LE_EXT_ADVERTISING_REPORT:
 			return true;
 		default:
 			return false;
@@ -577,6 +575,14 @@ static int configure_memory_usage(void)
 		sdc_cfg_set(SDC_DEFAULT_RESOURCE_CFG_TAG,
 			    SDC_CFG_TYPE_SCAN_BUFFER_CFG,
 			    &cfg);
+		if (required_memory < 0) {
+			return required_memory;
+		}
+
+		cfg.adv_buffer_cfg.max_adv_data = 1650;
+
+		required_memory = sdc_cfg_set(SDC_DEFAULT_RESOURCE_CFG_TAG,
+					      SDC_CFG_TYPE_ADV_BUFFER_CFG, &cfg);
 		if (required_memory < 0) {
 			return required_memory;
 		}
