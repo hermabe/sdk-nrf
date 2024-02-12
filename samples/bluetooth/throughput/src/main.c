@@ -23,7 +23,13 @@
 
 #include <zephyr/shell/shell_uart.h>
 
-#include <dk_buttons_and_leds.h>
+// #include <dk_buttons_and_leds.h>
+
+#ifdef shell_error
+#undef shell_error
+#endif
+
+#define shell_error(sh, ...) printk(__VA_ARGS__)
 
 #include "main.h"
 
@@ -60,7 +66,7 @@ static const char img[] =
 #include "img.file"
 ;
 
-static void button_handler_cb(uint32_t button_state, uint32_t has_changed);
+// static void button_handler_cb(uint32_t button_state, uint32_t has_changed);
 
 static const char *phy2str(uint8_t phy)
 {
@@ -205,10 +211,20 @@ static void connected(struct bt_conn *conn, uint8_t hci_err)
 	       info.role == BT_CONN_ROLE_CENTRAL ? "central" : "peripheral");
 	printk("Conn. interval is %u units\n", info.le.interval);
 
-	if (info.role == BT_CONN_ROLE_PERIPHERAL) {
-		err = bt_conn_set_security(conn, BT_SECURITY_L2);
+	// if (info.role == BT_CONN_ROLE_PERIPHERAL) {
+	// 	err = bt_conn_set_security(conn, BT_SECURITY_L2);
+	// 	if (err) {
+	// 		printk("Failed to set security: %d\n", err);
+	// 	}
+	// }
+
+	if (info.role == BT_CONN_ROLE_CENTRAL) {
+		err = bt_gatt_dm_start(default_conn,
+				       BT_UUID_THROUGHPUT,
+				       &discovery_cb,
+				       &throughput);
 		if (err) {
-			printk("Failed to set security: %d\n", err);
+			printk("Discover failed (err %d)\n", err);
 		}
 	}
 }
@@ -414,9 +430,9 @@ static const struct bt_throughput_cb throughput_cb = {
 	.data_send = throughput_send
 };
 
-static struct button_handler button = {
-	.cb = button_handler_cb,
-};
+// static struct button_handler button = {
+// 	.cb = button_handler_cb,
+// };
 
 void select_role(bool is_central)
 {
@@ -437,37 +453,37 @@ void select_role(bool is_central)
 	role_selected = true;
 
 	/* The role has been selected, button are not needed any more. */
-	err = dk_button_handler_remove(&button);
-	if (err) {
-		printk("Button disable error: %d\n", err);
-	}
+	// err = dk_button_handler_remove(&button);
+	// if (err) {
+	// 	printk("Button disable error: %d\n", err);
+	// }
 }
 
-static void button_handler_cb(uint32_t button_state, uint32_t has_changed)
-{
-	ARG_UNUSED(has_changed);
+// static void button_handler_cb(uint32_t button_state, uint32_t has_changed)
+// {
+// 	ARG_UNUSED(has_changed);
 
-	if (button_state & DK_BTN1_MSK) {
-		select_role(true);
-	} else if (button_state & DK_BTN2_MSK) {
-		select_role(false);
-	}
-}
+// 	if (button_state & DK_BTN1_MSK) {
+// 		select_role(true);
+// 	} else if (button_state & DK_BTN2_MSK) {
+// 		select_role(false);
+// 	}
+// }
 
 static void buttons_init(void)
 {
 	int err;
 
-	err = dk_buttons_init(NULL);
-	if (err) {
-		printk("Buttons initialization failed.\n");
-		return;
-	}
+	// err = dk_buttons_init(NULL);
+	// if (err) {
+	// 	printk("Buttons initialization failed.\n");
+	// 	return;
+	// }
 
-	/* Add dynamic buttons handler. Buttons should be activated only when
-	 * during the board role choosing.
-	 */
-	dk_button_handler_add(&button);
+	// /* Add dynamic buttons handler. Buttons should be activated only when
+	//  * during the board role choosing.
+	//  */
+	// dk_button_handler_add(&button);
 }
 
 static int connection_configuration_set(const struct shell *shell,
@@ -495,7 +511,7 @@ static int connection_configuration_set(const struct shell *shell,
 		return err;
 	}
 
-	shell_print(shell, "PHY update pending");
+	printk("PHY update pending\n");
 	err = k_sem_take(&throughput_sem, THROUGHPUT_CONFIG_TIMEOUT);
 	if (err) {
 		shell_error(shell, "PHY update timeout");
@@ -511,7 +527,7 @@ static int connection_configuration_set(const struct shell *shell,
 			return err;
 		}
 
-		shell_print(shell, "Connection parameters update pending");
+		printk("Connection parameters update pending\n");
 		err = k_sem_take(&throughput_sem, THROUGHPUT_CONFIG_TIMEOUT);
 		if (err) {
 			shell_error(shell,
@@ -530,7 +546,7 @@ static int connection_configuration_set(const struct shell *shell,
 			return err;
 		}
 
-		shell_print(shell, "LE Data length update pending");
+		printk("LE Data length update pending\n");
 		err = k_sem_take(&throughput_sem, THROUGHPUT_CONFIG_TIMEOUT);
 		if (err) {
 			shell_error(shell, "LE Data Length update timeout");
@@ -571,7 +587,8 @@ int test_run(const struct shell *shell,
 		return 0;
 	}
 
-	shell_print(shell, "\n==== Starting throughput test ====");
+	// printk("\n==== Starting throughput test ====\n");
+	printk("\n==== Starting throughput test ====");
 
 	err = connection_configuration_set(shell, conn_param, phy, data_len);
 	if (err) {
@@ -680,6 +697,26 @@ int main(void)
 	printk("Press button 2 or type \"peripheral\" on the peripheral board.\n");
 
 	buttons_init();
+
+#if defined(CONFIG_SOC_SERIES_NRF54LX)
+	select_role(false); /* Force peripheral */
+#elif defined(CONFIG_SOC_SERIES_NRF54HX)
+	select_role(true); /* Force central */
+#endif
+
+extern struct test_params {
+	struct bt_le_conn_param *conn_param;
+	struct bt_conn_le_phy_param *phy;
+	struct bt_conn_le_data_len_param *data_len;
+} *p_test_params;
+
+	while (!test_ready) {
+		k_sleep(K_SECONDS(5));
+	}
+
+
+		test_run(shell_backend_get_by_name("shell_uart"), p_test_params->conn_param, p_test_params->phy,
+			p_test_params->data_len);
 
 	return 0;
 }

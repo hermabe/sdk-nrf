@@ -1,0 +1,66 @@
+/{
+    chosen {
+        zephyr,entropy = &rng;
+    };
+
+    rng: rng {
+        compatible = "zephyr,dummy-entropy";
+        status = "okay";
+    };
+
+    soc {
+        cpurad_peripherals: peripheral@53000000 {
+            radio: radio@2c000 {
+                compatible = "nordic,nrf-radio";
+                reg = <0x2c000 0x1000>;
+                interrupts = <44 NRF_DEFAULT_IRQ_PRIORITY>;
+                status = "okay";
+                dfe-supported;
+                ieee802154-supported;
+                ble-2mbps-supported;
+                ble-coded-phy-supported;
+
+                ieee802154: ieee802154 {
+                    compatible = "nordic,nrf-ieee802154";
+                    status = "disabled";
+                };
+            };
+        };
+
+        global_peripherals: peripheral@5f000000 {
+            /* MPSL requires one global DPPI channel which is routed to the radiocore */
+            ipct130: ipct@921000 {
+                compatible = "nordic,nrf-ipct-global";
+                reg = <0x921000 0x404>;
+                interrupts = <289 NRF_DEFAULT_IRQ_PRIORITY>;
+                channels = <8>;
+                global-domain-id = <13>;
+                owned-channels = <0>;
+                source-channel-links = <0 3 0>;
+                status = "okay";
+            };
+
+            dppic130: dppic@922000 {
+                compatible = "nordic,nrf-dppic-global";
+                reg = <0x922000 0x808>;
+                channels = <8>;
+                channel-groups = <2>;
+                owned-channels = <0>;
+                sink-channels = <0>;
+                nonsecure-channels = <0>;
+                status = "okay";
+            };
+
+            dppic132: dppic@991000 {
+                compatible = "nordic,nrf-dppic-global";
+                reg = <0x991000 0x808>;
+                channels = <8>;
+                channel-groups = <2>;
+                owned-channels = <0>;
+                source-channels = <0>;
+                nonsecure-channels = <0>;
+                status = "okay";
+            };
+        };
+    };
+};

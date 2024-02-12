@@ -33,6 +33,8 @@ static struct test_params {
 	.data_len = BT_LE_DATA_LEN_PARAM_MAX
 };
 
+struct test_params *p_test_params = &test_params;
+
 static const char *phy_str(const struct bt_conn_le_phy_param *phy)
 {
 	static const char *const str[] = {

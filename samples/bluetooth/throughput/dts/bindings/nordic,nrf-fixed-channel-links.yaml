@@ -1,0 +1,30 @@
+#
+# Copyright (c) 2022 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: LicenseRef-Nordic-4-Clause
+#
+
+description: |
+  Nordic Fixed Channel Links
+
+  Contains common bindings that describe fixed (hardwired) channel connections
+  from a peripheral node to another peripheral node.
+
+properties:
+    fixed-channel-links:
+      type: phandle-array
+      description: |
+        A list of ranges of linked channels between this peripheral node and
+        another peripheral node. The prop is encoded as
+        <&phandle src-ch-start dst-ch-start count>, where:
+        - phandle is the phandle of the linked peripheral node
+        - src-ch-start is the starting index of the channel range in this node
+        - dst-ch-start is the starting index of the channel range in the linked
+          node
+        - count is the number of consecutive linked channels starting at the
+          start indices
+
+fixed-channel-link-cells:
+  - src-ch-start
+  - dst-ch-start
+  - count

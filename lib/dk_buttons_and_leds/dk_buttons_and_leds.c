@@ -23,8 +23,10 @@ LOG_MODULE_REGISTER(dk_buttons_and_leds, CONFIG_DK_LIBRARY_LOG_LEVEL);
 #define BUTTONS_NODE DT_PATH(buttons)
 #define LEDS_NODE DT_PATH(leds)
 
-#define GPIO0_DEV DEVICE_DT_GET(DT_NODELABEL(gpio0))
-#define GPIO1_DEV DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpio1))
+// #define GPIO0_DEV DEVICE_DT_GET(DT_NODELABEL(gpio0))
+// #define GPIO1_DEV DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpio1))
+#define GPIO0_DEV NULL
+#define GPIO1_DEV NULL
 
 /* GPIO0, GPIO1 and GPIO expander devices require different interrupt flags. */
 #define FLAGS_GPIO_0_1_ACTIVE GPIO_INT_LEVEL_ACTIVE
