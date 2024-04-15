@@ -1,0 +1,32 @@
+/ {
+    chosen {
+        zephyr,console = &uart136;
+        zephyr,bt-hci-ipc = &ipc0;
+    };
+};
+
+ipc0: &cpuapp_cpurad_ipc {
+    status = "okay";
+};
+
+ipc0: &cpuapp_cpurad_ipc {
+    status = "okay";
+};
+
+&shared_ram3x_region {
+    compatible = "nordic,allocatable-ram";
+    perm-write;
+    perm-read;
+};
+
+&cpuapp_cpurad_ram0x_region {
+    status = "okay";
+};
+
+&cpuapp_bellboard {
+    status = "okay";
+};
+
+&cpurad_bellboard {
+    status = "okay";
+};
