@@ -240,6 +240,17 @@ int main(void)
 		}
 	}
 
+	bt_addr_le_t public_addr = {
+		.type = BT_ADDR_LE_PUBLIC,
+		.a = {{1, 2, 3, 4, 5, 6}},
+	};
+
+	err = bt_id_create(&public_addr, NULL);
+	if (err) {
+		printk("bt_id_create failed (err %d)\n", err);
+		return 0;
+	}
+
 	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
