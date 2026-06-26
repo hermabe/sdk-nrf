@@ -117,15 +117,21 @@ static void mpsl_hfclk_src_callback(mpsl_clock_evt_type_t evt_type)
  * They are not forwarded to the lfclk event handler; nrfx_clock_lfclk_irq_handler()
  * is intentionally empty.
  */
+static uint8_t m_config_clock_source_get(void)
+{
+	/* TODO */
+	return NRF_CLOCK_LFCLK_XTAL;
+}
+
 void nrfx_clock_lfclk_start(void)
 {
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
-	m_event_handler(NRFX_CLOCK_EVT_LFCLK_STARTED);
-#else
-	if (m_lfclk_event_handler != NULL) {
-		m_lfclk_event_handler(NRFX_CLOCK_LFCLK_EVT_LFCLK_STARTED);
+	nrf_clock_lf_src_set(NRF_CLOCK, m_config_clock_source_get());
+	nrf_clock_event_clear(NRF_CLOCK, NRF_CLOCK_EVENT_LFCLKSTARTED);
+	nrf_clock_task_trigger(NRF_CLOCK, NRF_CLOCK_TASK_LFCLKSTART);
+	if (m_lfclk_event_handler)
+	{
+		nrf_clock_int_enable(NRF_CLOCK, NRF_CLOCK_INT_LF_STARTED_MASK);
 	}
-#endif /* CONFIG_CLOCK_CONTROL_NRF */
 }
 
 void nrfx_clock_lfclk_stop(void)
@@ -267,6 +273,16 @@ int nrfx_clock_init(nrfx_clock_event_handler_t handler)
  */
 void nrfx_clock_irq_handler(void)
 {
+	if (nrf_clock_event_check(NRF_CLOCK, NRF_CLOCK_EVENT_LFCLKSTARTED))
+	{
+		nrf_clock_event_clear(NRF_CLOCK, NRF_CLOCK_EVENT_LFCLKSTARTED);
+		nrf_clock_int_disable(NRF_CLOCK, NRF_CLOCK_INTENSET_LFCLKSTARTED_Msk);
+
+		if (m_lfclk_event_handler) {
+			m_lfclk_event_handler(NRFX_CLOCK_LFCLK_EVT_LFCLK_STARTED);
+		}
+	}
+
 	MPSL_IRQ_CLOCK_Handler();
 }
 

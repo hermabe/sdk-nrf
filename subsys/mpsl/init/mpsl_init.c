@@ -30,6 +30,8 @@
 #include <hal/nrf_power.h>
 #endif /* CONFIG_NRFX_POWER */
 
+#include <hal/nrf_clock.h>
+
 #if IS_ENABLED(CONFIG_NRF_SYS_EVENT)
 #include <nrf_sys_event.h>
 #endif /* CONFIG_NRF_SYS_EVENT */
@@ -504,6 +506,19 @@ static int32_t mpsl_lib_init_internal(void)
 	nrf_dppi_channels_enable(NRF_DPPIC130, DPPI_SINK_CHANNELS);
 	nrf_dppi_channels_enable(NRF_DPPIC132, DPPI_SOURCE_CHANNELS);
 #endif
+
+	nrf_clock_lfclk_t running_clk_src;
+	if (!nrf_clock_is_running(NRF_CLOCK, NRF_CLOCK_DOMAIN_LFCLK, &running_clk_src))
+	{
+		return -EAGAIN;
+	}
+
+	if (running_clk_src != (nrf_clock_lfclk_t)clock_cfg.source)
+	{
+		/* Wrong clock source started */
+		return -EINVAL;
+	}
+
 #if defined(CONFIG_MPSL_USE_EXTERNAL_CLOCK_CONTROL)
 	err = mpsl_init(NULL, CONFIG_MPSL_LOW_PRIO_IRQN, m_assert_handler);
 #else
@@ -756,7 +771,7 @@ void mpsl_low_latency_release_callback(void)
 #if defined(CONFIG_MPSL_USE_EXTERNAL_CLOCK_CONTROL)
 #define MPSL_INIT_LEVEL POST_KERNEL
 #else
-#define MPSL_INIT_LEVEL PRE_KERNEL_1
+#define MPSL_INIT_LEVEL PRE_KERNEL_2
 #endif /* CONFIG_MPSL_USE_EXTERNAL_CLOCK_CONTROL */
 
 #if defined(CONFIG_MPSL_USE_EXTERNAL_CLOCK_CONTROL) && \
